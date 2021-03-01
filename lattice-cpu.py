@@ -22,7 +22,6 @@ omega       = 1 / (3*nulb+0.5)      # Relaxation parameter
 #   / | \
 #  /  |  \
 # 8   5   2
-
 v = np.array([
     [1,1], [1,0], [1,-1],
     [0,1], [0,0], [0,-1],
@@ -31,10 +30,18 @@ t = np.array([
     1/36, 1/9, 1/36,
     1/9, 4/9, 1/9,
     1/36, 1/9, 1/36])
-
 col1 = np.array([0, 1, 2])
 col2 = np.array([3, 4, 5])
 col3 = np.array([6, 7, 8])
+
+# Setup: cylindrical obstacle and velocity inlet with perturbation
+def obstacle_fun(x, y):
+    return (x-cx)**2 + (y-cy)**2 < r**2
+
+# Initial velocity profile: almost zero, with a
+# slight perturbation to trigger the instability.
+def inivel(d, x, y):
+    return (1-d) * uLB * (1 + 1e-4*np.sin(y/ly*2*np.pi))
 
 def macroscopic(fin):
     """Compute macroscopic variables (density, velocity)
@@ -58,16 +65,6 @@ def equilibrium(rho, u):
         cu = 3 * (v[i,0]*u[0,:,:] + v[i,1]*u[1,:,:])
         feq[i,:,:] = rho*t[i] * (1 + cu + 0.5*cu**2 - usqr)
     return feq
-
-# Setup: cylindrical obstacle and velocity inlet with perturbation
-# Creation of a mask with boolean values, defining the shape of the obstacle.
-def obstacle_fun(x, y):
-    return (x-cx)**2+(y-cy)**2<r**2
-
-# Initial velocity profile: 
-# almost zero, with a slight perturbation to trigger the instability.
-def inivel(d, x, y):
-    return (1-d) * uLB * (1 + 1e-4*np.sin(y/ly*2*np.pi))
 
 if __name__ == "__main__":
     print("Initializing Simulation...")
