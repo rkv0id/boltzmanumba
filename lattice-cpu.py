@@ -1,48 +1,20 @@
 #!/usr/bin/env python3
-# Copyright (C) 2015 Universite de Geneve, Switzerland
-# E-mail contact: jonas.latt@unige.ch
-#
-# 2D flow around a cylinder
-#
-
-#
-# Slightly modified from original version
-# found here :
-#  https://github.com/sidsriv/Simulation-and-modelling-of-natural-processes
-#
-# The approach used for boundary conditions is link-wise.
-# See book : The Lattice Boltzmann Method, Principles and Practice
-# https://www.springer.com/gp/book/9783319446479
-# section 5.2.4.3
-# Please note that Wet-node open boundary conditions is a special case of
-# solid boundary (see section 5.3.4)
-#
-
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import cm
+from matplotlib.pyplot import imsave
+import time as tm
 
-###### Flow definition #################################################
-maxIter = 200000  # Total number of time iterations.
-Re = 150.0         # Reynolds number.
-nx, ny = 420, 180 # Numer of lattice nodes.
-ly = ny-1         # Height of the domain in lattice units.
-cx, cy, r = nx//4, ny//2, ny//9 # Coordinates of the cylinder.
-uLB     = 0.04                  # Velocity in lattice units.
-nulb    = uLB*r/Re;             # Viscoscity in lattice units.
-omega = 1 / (3*nulb+0.5);    # Relaxation parameter.
+# Flow definition
+stateSv     = 500                   # Figure Saving Trigger (each stateSv iters.)
+maxIter     = 200000                # Total number of time iteration.
+Re          = 150.0                 # Reynolds number
+nx, ny      = 420, 180              # Numer of lattice nodes
+ly          = ny-1                  # Height of the domain in lattice unit.
+cx, cy, r   = nx//4, ny//2, ny//9   # Coordinates of the cylinder
+uLB         = 0.04                  # Velocity in lattice units
+nulb        = uLB*r/Re              # Viscoscity in lattice units
+omega       = 1 / (3*nulb+0.5)      # Relaxation parameter
 
-###### Lattice Constants ###############################################
-v = np.array([ [ 1,  1], [ 1,  0], [ 1, -1], [ 0,  1], [ 0,  0],
-               [ 0, -1], [-1,  1], [-1,  0], [-1, -1] ])
-t = np.array([ 1/36, 1/9, 1/36, 1/9, 4/9, 1/9, 1/36, 1/9, 1/36])
-
-col1 = np.array([0, 1, 2])
-col2 = np.array([3, 4, 5])
-col3 = np.array([6, 7, 8])
-
-# LBM lattice : D2Q9 (numbers are index to v array defined above)
-#
+# Lattice: D2Q9
 # 6   3   0
 #  \  |  /
 #   \ | /
@@ -51,7 +23,19 @@ col3 = np.array([6, 7, 8])
 #  /  |  \
 # 8   5   2
 
-###### Function Definitions ############################################
+v = np.array([
+    [1,1], [1,0], [1,-1],
+    [0,1], [0,0], [0,-1],
+    [-1,1], [-1,0], [-1,-1]])
+t = np.array([
+    1/36, 1/9, 1/36,
+    1/9, 4/9, 1/9,
+    1/36, 1/9, 1/36])
+
+col1 = np.array([0, 1, 2])
+col2 = np.array([3, 4, 5])
+col3 = np.array([6, 7, 8])
+
 def macroscopic(fin):
     """Compute macroscopic variables (density, velocity)
     fluid density is 0th moment of distribution functions 
@@ -75,11 +59,8 @@ def equilibrium(rho, u):
         feq[i,:,:] = rho*t[i] * (1 + cu + 0.5*cu**2 - usqr)
     return feq
 
-#
 # Setup: cylindrical obstacle and velocity inlet with perturbation
-#
 # Creation of a mask with boolean values, defining the shape of the obstacle.
-#
 def obstacle_fun(x, y):
     return (x-cx)**2+(y-cy)**2<r**2
 
@@ -88,8 +69,8 @@ def obstacle_fun(x, y):
 def inivel(d, x, y):
     return (1-d) * uLB * (1 + 1e-4*np.sin(y/ly*2*np.pi))
 
-#############################################################
-def main():
+if __name__ == "__main__":
+    print("Initializing Simulation...")
 
     # create obstacle mask array from element-wise function
     obstacle = np.fromfunction(obstacle_fun, (nx,ny))
@@ -102,9 +83,10 @@ def main():
     # with the given velocity.
     fin = equilibrium(1, vel)
 
-    ###### Main time loop ########
+    print("Starting Simulation...")
+    figures = {}
+    start = tm.time()
     for time in range(maxIter):
-
         # Right wall: outflow condition.
         # we only need here to specify distrib. function for velocities
         # that enter the domain (other that go out, are set by the streaming step)
@@ -132,15 +114,16 @@ def main():
 
         # Streaming step.
         for i in range(9):
-            fin[i,:,:] = np.roll(np.roll(fout[i,:,:], v[i,0], axis=0),
-                                 v[i,1], axis=1 )
+            fin[i,:,:] = np.roll(
+                np.roll(fout[i,:,:], v[i,0], axis=0),
+                v[i,1], axis=1)
  
-        # Visualization of the velocity.
-        if (time%100==0):
-            plt.clf()
-            plt.imshow(np.sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
-            plt.savefig("vel.{0:04d}.png".format(time//100))
+        # Recording the velocity.
+        if (time % stateSv == 0):
+            figures[time//stateSv] = np.sqrt(u[0]**2+u[1]**2).transpose()
 
-if __name__ == "__main__":
-    # execute only if run as a script
-    main()
+    end = tm.time()
+    print("Ended in %d seconds." % (end-start))
+    print("Saving visual simulation...")
+    for tm, fig in figures.items():
+        imsave("out/vel.{0:04d}.png".format(tm), fig, cmap="autumn")
