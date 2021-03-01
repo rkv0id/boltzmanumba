@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import numpy as np
 from matplotlib.pyplot import imsave
 import time as tm
