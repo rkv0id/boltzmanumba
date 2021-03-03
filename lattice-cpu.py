@@ -4,7 +4,6 @@ import time as tm
 
 # Flow definition
 stateSv     = 500                   # Figure Saving Trigger (each stateSv iters.)
-maxIter     = 200000                # Total number of time iteration.
 Re          = 150.0                 # Reynolds number
 nx, ny      = 420, 180              # Numer of lattice nodes
 ly          = ny-1                  # Height of the domain in lattice unit.
@@ -42,18 +41,20 @@ def obstacle_fun(x, y):
 def inivel(d, x, y):
     return (1-d) * uLB * (1 + 1e-4*np.sin(y/ly*2*np.pi))
 
-def macroscopic(fin):
+def rho_clc(fin):
+    return np.sum(fin, axis=0)
+
+def macroscopic(fin, rho):
     """Compute macroscopic variables (density, velocity)
     fluid density is 0th moment of distribution functions 
     fluid velocity components are 1st order moments of dist. functions
     """
-    rho = np.sum(fin, axis=0)
     u = np.zeros((2, nx, ny))
     for i in range(9):
         u[0,:,:] += v[i,0] * fin[i,:,:]
         u[1,:,:] += v[i,1] * fin[i,:,:]
     u /= rho
-    return rho, u
+    return u
 
 def equilibrium(rho, u):
     """Equilibrium distribution function.
@@ -65,7 +66,7 @@ def equilibrium(rho, u):
         feq[i,:,:] = rho*t[i] * (1 + cu + 0.5*cu**2 - usqr)
     return feq
 
-if __name__ == "__main__":
+def main(maxIter):
     print("Initializing Simulation...")
 
     # create obstacle mask array from element-wise function
@@ -89,7 +90,9 @@ if __name__ == "__main__":
         fin[col3,nx-1,:] = fin[col3,nx-2,:] 
 
         # Compute macroscopic variables, density and velocity.
-        rho, u = macroscopic(fin)
+        rho = rho_clc(fin)
+        print(rho.shape)
+        u = macroscopic(fin, rho)
 
         # Left wall: inflow condition.
         u[:,0,:] = vel[:,0,:]
@@ -123,3 +126,6 @@ if __name__ == "__main__":
     print("Saving visual simulation...")
     for tm, fig in figures.items():
         imsave("out/vel.{0:04d}.png".format(tm), fig, cmap="autumn")
+
+if __name__ == "__main__":
+    main(2000)
