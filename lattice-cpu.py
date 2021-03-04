@@ -117,7 +117,7 @@ def main(maxIter):
                 v[i,1], axis=1)
  
         # Recording the velocity.
-        if (time % stateSv == 2):
+        if (time % stateSv == 0):
             figures[time//stateSv] = np.sqrt(u[0]**2+u[1]**2).transpose()
 
     end = tm.time()
