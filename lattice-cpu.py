@@ -3,7 +3,7 @@ from matplotlib.pyplot import imsave
 import time as tm
 
 # Flow definition
-stateSv     = 500                   # Figure Saving Trigger (each stateSv iters.)
+stateSv     = 1000                  # Figure Saving Trigger (each stateSv iters.)
 Re          = 150.0                 # Reynolds number
 nx, ny      = 420, 180              # Numer of lattice nodes
 ly          = ny-1                  # Height of the domain in lattice unit.
@@ -91,7 +91,6 @@ def main(maxIter):
 
         # Compute macroscopic variables, density and velocity.
         rho = rho_clc(fin)
-        print(rho.shape)
         u = macroscopic(fin, rho)
 
         # Left wall: inflow condition.
@@ -118,14 +117,14 @@ def main(maxIter):
                 v[i,1], axis=1)
  
         # Recording the velocity.
-        if (time % stateSv == 0):
+        if (time % stateSv == 2):
             figures[time//stateSv] = np.sqrt(u[0]**2+u[1]**2).transpose()
 
     end = tm.time()
     print("Ended in %d seconds." % (end-start))
     print("Saving visual simulation...")
-    for tm, fig in figures.items():
-        imsave("out/vel.{0:04d}.png".format(tm), fig, cmap="autumn")
+    for inst, fig in figures.items():
+        imsave("out/vel.{0:04d}.png".format(inst), fig, cmap="autumn")
 
 if __name__ == "__main__":
-    main(2000)
+    main(20000)
