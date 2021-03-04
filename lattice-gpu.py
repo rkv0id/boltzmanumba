@@ -118,7 +118,7 @@ def stream(fin, fout, v):
     x, y = cuda.grid(2)
     if x < nx and y < ny:
         for i in range(9):
-            fin[i,x,y] = fout[i, (x+v[i,0]) % nx, (y+v[i,1]) % ny]
+            fin[i,x,y] = fout[i, (x-v[i,0]) % nx, (y-v[i,1]) % ny]
 
 def main(maxIter, stateSv):
     print("Initializing Simulation...")
