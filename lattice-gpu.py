@@ -151,7 +151,7 @@ def main(maxIter, stateSv):
         inflow[blockspergrid, threadsperblock](u, rho, vel, fin)
         
         # equilibrium state re-compute
-        equilibrium[blockspergrid, threadsperblock](feq, rho, vel, v, t)
+        equilibrium[blockspergrid, threadsperblock](feq, rho, u, v, t)
         post_equilibrium[blockspergrid, threadsperblock](fin, feq)
         
         # collision compute
@@ -164,7 +164,7 @@ def main(maxIter, stateSv):
         stream[blockspergrid, threadsperblock](fin, fout, v)
         
         # Recording timestamp velocity
-        if (time % stateSv == 2):
+        if (time % stateSv == 0):
             fluid = u.copy_to_host()
             fig = np.sqrt(fluid[0]**2 + fluid[1]**2).transpose()
             figures[time//stateSv] = fig
