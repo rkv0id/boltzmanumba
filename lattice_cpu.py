@@ -1,5 +1,5 @@
 import numpy as np
-from matplotlib.pyplot import imsave
+from matplotlib.pyplot import imsave, imshow
 import time as tm
 
 # Flow definition
@@ -65,8 +65,9 @@ def equilibrium(rho, u):
         feq[i,:,:] = rho*t[i] * (1 + cu + 0.5*cu**2 - usqr)
     return feq
 
-def main(maxIter, saveat):
-    print("Initializing Simulation...")
+def main(maxIter, saveat, notebook=False):
+    if not notebook:
+        print("Initializing Simulation...")
 
     # create obstacle mask array from element-wise function
     obstacle = np.fromfunction(obstacle_fun, (nx,ny))
@@ -79,9 +80,10 @@ def main(maxIter, saveat):
     # with the given velocity.
     fin = equilibrium(1, vel)
 
-    print("Starting Simulation...")
-    figures = {}
-    start = tm.time()
+    if not notebook:
+        print("Starting Simulation...")
+        figures = {}
+        start = tm.time()
     for time in range(maxIter):
         # Right wall: outflow condition.
         # we only need here to specify distrib. function for velocities
@@ -116,14 +118,18 @@ def main(maxIter, saveat):
                 v[i,1], axis=1)
  
         # Recording the velocity.
-        if (time % saveat == 0):
+        if (not notebook and time % saveat == 0):
             figures[time//saveat] = np.sqrt(u[0]**2+u[1]**2).transpose()
 
-    end = tm.time()
-    print("Ended in %d seconds." % (end-start))
-    print("Saving visual simulation...")
-    for inst, fig in figures.items():
-        imsave("out/vel.{0:04d}.png".format(inst), fig, cmap="autumn")
+    if not notebook:
+        end = tm.time()
+        print("Ended in %d seconds." % (end-start))
+        print("Saving visual simulation...")
+        for inst, fig in figures.items():
+            imsave("out/vel.{0:04d}.png".format(inst), fig, cmap="autumn")
+    else:
+        figure = np.sqrt(u[0]**2+u[1]**2).transpose()
+        imshow(figure, cmap="autumn")
 
 if __name__ == "__main__":
     main(20000, 1000)

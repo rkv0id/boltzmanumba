@@ -2,7 +2,7 @@ import time as tm
 import numpy as np
 from math import sin, pi
 from numba import cuda
-from matplotlib.pyplot import imsave
+from matplotlib.pyplot import imsave, imshow
 
 # Flow definition
 nx, ny      = 420, 180
@@ -120,8 +120,9 @@ def stream(fin, fout, v):
         for i in range(9):
             fin[i,x,y] = fout[i, (x-v[i,0]) % nx, (y-v[i,1]) % ny]
 
-def main(maxIter, stateSv):
-    print("Initializing Simulation...")
+def main(maxIter, saveat, notebook=False):
+    if not notebook:
+        print("Initializing Simulation...")
     fin     = cuda.device_array((9,nx,ny))
     feq     = cuda.device_array((9,nx,ny))
     fout    = cuda.device_array((9,nx,ny))
@@ -134,9 +135,10 @@ def main(maxIter, stateSv):
     # init equilibrium
     equilibrium[blockspergrid, threadsperblock](fin, rho, vel, v, t)
 
-    print("Starting Simulation...")
-    figures = {}
-    start = tm.time()
+    if not notebook:
+        print("Starting Simulation...")
+        figures = {}
+        start = tm.time()
     for time in range(maxIter):
         # outflow conditions
         outflow[blockspergrid, threadsperblock](fin)
@@ -164,17 +166,22 @@ def main(maxIter, stateSv):
         stream[blockspergrid, threadsperblock](fin, fout, v)
         
         # Recording timestamp velocity
-        if (time % stateSv == 0):
+        if (not notebook and time % saveat == 0):
             fluid = u.copy_to_host()
             fig = np.sqrt(fluid[0]**2 + fluid[1]**2).transpose()
-            figures[time//stateSv] = fig
+            figures[time//saveat] = fig
     
-    end = tm.time()
-    print("Ended in %d seconds." % (end - start))
-    print("Saving simulation's visuals...")
-    for inst, fig in figures.items():
-        imsave("gpu_out/vel.{0:04d}.png".format(inst), fig, cmap="autumn")
-    print("DONE! Check ./gpu_out folder for progress visuals.")
+    if not notebook:
+        end = tm.time()
+        print("Ended in %d seconds." % (end - start))
+        print("Saving simulation's visuals...")
+        for inst, fig in figures.items():
+            imsave("gpu_out/vel.{0:04d}.png".format(inst), fig, cmap="autumn")
+        print("DONE! Check ./gpu_out folder for progress visuals.")
+    else:
+        fluid = u.copy_to_host()
+        figure = np.sqrt(fluid[0]**2 + fluid[1]**2).transpose()
+        imshow(figure, cmap="autumn")
 
 if __name__ == "__main__":
     main(20000, 1000)
