@@ -3,7 +3,6 @@ from matplotlib.pyplot import imsave
 import time as tm
 
 # Flow definition
-stateSv     = 1000                  # Figure Saving Trigger (each stateSv iters.)
 Re          = 150.0                 # Reynolds number
 nx, ny      = 420, 180              # Numer of lattice nodes
 ly          = ny-1                  # Height of the domain in lattice unit.
@@ -66,7 +65,7 @@ def equilibrium(rho, u):
         feq[i,:,:] = rho*t[i] * (1 + cu + 0.5*cu**2 - usqr)
     return feq
 
-def main(maxIter):
+def main(maxIter, saveat):
     print("Initializing Simulation...")
 
     # create obstacle mask array from element-wise function
@@ -117,8 +116,8 @@ def main(maxIter):
                 v[i,1], axis=1)
  
         # Recording the velocity.
-        if (time % stateSv == 0):
-            figures[time//stateSv] = np.sqrt(u[0]**2+u[1]**2).transpose()
+        if (time % saveat == 0):
+            figures[time//saveat] = np.sqrt(u[0]**2+u[1]**2).transpose()
 
     end = tm.time()
     print("Ended in %d seconds." % (end-start))
@@ -127,4 +126,4 @@ def main(maxIter):
         imsave("out/vel.{0:04d}.png".format(inst), fig, cmap="autumn")
 
 if __name__ == "__main__":
-    main(20000)
+    main(20000, 1000)
