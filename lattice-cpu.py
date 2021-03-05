@@ -97,7 +97,7 @@ def main(maxIter):
         u[:,0,:] = vel[:,0,:]
         rho[0,:] = 1/(1-u[0,0,:]) * ( np.sum(fin[col2,0,:], axis=0) +
                                       2*np.sum(fin[col3,0,:], axis=0) )
-        
+
         # Compute equilibrium.
         feq = equilibrium(rho, u)
         fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
